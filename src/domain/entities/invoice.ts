@@ -1,16 +1,27 @@
+import { InvoiceXml } from "../../application/invoice/invoice-xml";
+
 export class Invoice {
   constructor(
-    public readonly access_key: string,
-    public readonly sender_document_number: string,
-    public readonly sender: string,
-    public readonly recipient: string,
-    public readonly recipient_document_number: string,
-    public readonly recipient_address: string,
-    public readonly recipient_phone: string,
+    public readonly accessKey: number,
+    public readonly issuerCnpj: number,
+    public readonly recipientCnpj: number,
     public readonly quantity: number,
-    public readonly gross_weight: number,
-    public readonly total_value: number,
-    public readonly issue_date: Date,
-    public readonly created_at: Date
+    public readonly grossWeight: number,
+    public readonly totalValue: number,
+    public readonly issueDate: Date,
+    public readonly createdAt: Date
   ) {}
+
+  public static newFromJson(invoice: Record<string, any>): Invoice {
+    return new Invoice(
+      invoice.access_key,
+      invoice.issuerCnpj,
+      invoice.recipientCnpj,
+      invoice.quantity,
+      invoice.gross_weight,
+      invoice.total_value,
+      invoice.issue_date,
+      invoice.created_at
+    );
+  }
 }
