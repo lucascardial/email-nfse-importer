@@ -1,10 +1,10 @@
-import { InvoiceXml } from "../../application/invoice/invoice-xml";
+import { Cnpj } from "../object-values/cnpj";
 
 export class Invoice {
   constructor(
-    public readonly accessKey: number,
-    public readonly issuerCnpj: number,
-    public readonly recipientCnpj: number,
+    public readonly accessKey: string,
+    public readonly issuerCnpj: Cnpj,
+    public readonly recipientCnpj: Cnpj,
     public readonly quantity: number,
     public readonly grossWeight: number,
     public readonly totalValue: number,
@@ -15,8 +15,8 @@ export class Invoice {
   public static newFromJson(invoice: Record<string, any>): Invoice {
     return new Invoice(
       invoice.access_key,
-      invoice.issuerCnpj,
-      invoice.recipientCnpj,
+      invoice.issuer_cnpj,
+      invoice.recipient_cnpj,
       invoice.quantity,
       invoice.gross_weight,
       invoice.total_value,

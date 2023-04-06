@@ -1,9 +1,11 @@
+import { Cnpj } from "../object-values/cnpj";
+
 export class Company {
     constructor(
-        public readonly cnpj: number,
+        public readonly cnpj: Cnpj,
         public readonly facadeName: string,
         public readonly businessName: string,
-        public readonly stateNumberInscrition: number,
+        public readonly stateNumberInscription: number,
         public readonly ctrNumber: number,
         public readonly street: string,
         public readonly streetNumber: number,
@@ -18,18 +20,18 @@ export class Company {
 
     public static newFromJson(company: Record<string, any>): Company {
         return new Company(
-            company.cnpj,
-            company.facadeName,
-            company.businessName,
-            company.stateNumberInscrition,
-            company.ctrNumber,
+            new Cnpj(company.cnpj),
+            company.facade_name,
+            company.business_name,
+            company.state_number_inscription,
+            company.ctr_number,
             company.street,
-            company.streetNumber,
+            company.street_number,
             company.neighborhood,
-            company.cityCode,
+            company.city_code,
             company.city,
             company.state,
-            company.zipCode,
+            company.zip_code,
             company.phone,
             company.email
         );
