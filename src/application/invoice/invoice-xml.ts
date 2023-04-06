@@ -304,7 +304,7 @@ export type InvoiceXml = {
   export type InfProt = {
     tpAmb: number
     verAplic: string
-    chNFe: number
+    chNFe: string
     dhRecbto: string
     nProt: number
     digVal: string
