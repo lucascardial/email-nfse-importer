@@ -1,46 +1,61 @@
-import { Company, Invoice } from "../../../../domain/entities";
+import { inject, injectable } from "inversify";
+import { Company, Invoice, InvoiceError } from "../../../../domain/entities";
+import { InvoiceAlreadyExistsError } from "../../../../domain/commom/errors/invoice/invoice-already-existis.error";
+import { ErrorOr, left, right } from "../../../../lib/error-or/error-or.interface";
 import { IXmlFileReader } from "../../../commom/services/xml-reader.interface";
-import { IInvoiceRepository, ICompanyRepository } from "../../../persistence";
+import { IInvoiceRepository, ICompanyRepository, IInvoiceErrorRepository } from "../../../persistence";
 import { InvoiceXml } from "../../invoice-xml";
 import { ImportInvoiceFromXmlCommand } from "./import-invoice-from-xml-command";
+import { ValidateXml } from "./validate-xml";
 
+@injectable()
 export class ImportInvoiceFromXmlCommandHandler {
     constructor(
-        private readonly invoiceRepository: IInvoiceRepository,
-        private readonly companyRepository: ICompanyRepository,
-        private readonly xmlReader: IXmlFileReader,
+        @inject('IInvoiceRepository') private readonly invoiceRepository: IInvoiceRepository,
+        @inject('ICompanyRepository') private readonly companyRepository: ICompanyRepository,
+        @inject('IInvoiceErrorRepository') private readonly invoiceErrorRepository: IInvoiceErrorRepository,
+        @inject('IXmlFileReader') private readonly xmlReader: IXmlFileReader,
     ) { }
 
-    async execute(command: ImportInvoiceFromXmlCommand): Promise<void> {
+    async execute(command: ImportInvoiceFromXmlCommand): Promise<ErrorOr<void>> {
         const data = await this.xmlReader.read<InvoiceXml>(command.xmlPath);
+
+        const validateXml = ValidateXml.validate(data);
+
+        if(validateXml) {
+            await this.invoiceErrorRepository.save(new InvoiceError(this.getFileName(command.xmlPath), JSON.stringify(validateXml)));
+            return left(validateXml);
+        }
 
         const accessKey = data.nfeProc.protNFe.infProt.chNFe;
 
         const invoiceExists = await this.invoiceRepository.findByAccessKey(accessKey);
+        
         if (invoiceExists) {
-            throw new Error("Invoice already exists");
+            return left(new InvoiceAlreadyExistsError());
         }
         
         // Get or Create Company Issuer
         let companyIssuer = await this.companyRepository.findByCnpj(data.nfeProc.NFe.infNFe.emit.CNPJ);
+        
         if(!companyIssuer) {
             companyIssuer = Company.newFromJson({
                 cnpj: data.nfeProc.NFe.infNFe.emit.CNPJ,
-                facadeName: data.nfeProc.NFe.infNFe.emit.xFant,
-                businessName: data.nfeProc.NFe.infNFe.emit.xNome,
-                stateNumberInscrition: data.nfeProc.NFe.infNFe.emit.IE,
-                ctrNumber: data.nfeProc.NFe.infNFe.emit.CRT,
+                facade_name: data.nfeProc.NFe.infNFe.emit.xFant,
+                business_name: data.nfeProc.NFe.infNFe.emit.xNome,
+                state_number_inscription: data.nfeProc.NFe.infNFe.emit.IE,
+                ctr_number: data.nfeProc.NFe.infNFe.emit.CRT,
                 street: data.nfeProc.NFe.infNFe.emit.enderEmit.xLgr,
-                streetNumber: data.nfeProc.NFe.infNFe.emit.enderEmit.nro,
+                street_number: data.nfeProc.NFe.infNFe.emit.enderEmit.nro,
                 neighborhood: data.nfeProc.NFe.infNFe.emit.enderEmit.xBairro,
-                cityCode: data.nfeProc.NFe.infNFe.emit.enderEmit.cMun,
+                city_code: data.nfeProc.NFe.infNFe.emit.enderEmit.cMun,
                 city: data.nfeProc.NFe.infNFe.emit.enderEmit.xMun,
                 state: data.nfeProc.NFe.infNFe.emit.enderEmit.UF,
-                zipCode: data.nfeProc.NFe.infNFe.emit.enderEmit.CEP,
+                zip_code: data.nfeProc.NFe.infNFe.emit.enderEmit.CEP,
                 phone: data.nfeProc.NFe.infNFe.emit.enderEmit.fone
             });
-
             await this.companyRepository.save(companyIssuer);
+        
         }
         
         // Get or Create Company Receiver
@@ -48,16 +63,16 @@ export class ImportInvoiceFromXmlCommandHandler {
         if(!companyReceiver) {
             companyReceiver = Company.newFromJson({
                 cnpj: data.nfeProc.NFe.infNFe.dest.CNPJ,
-                facadeName: data.nfeProc.NFe.infNFe.dest.xNome,
-                businessName: data.nfeProc.NFe.infNFe.dest.xNome,
-                stateNumberInscrition: data.nfeProc.NFe.infNFe.dest.IE,
+                facade_name: data.nfeProc.NFe.infNFe.dest.xNome,
+                business_name: data.nfeProc.NFe.infNFe.dest.xNome,
+                state_number_inscription: data.nfeProc.NFe.infNFe.dest.IE,
                 street: data.nfeProc.NFe.infNFe.dest.enderDest.xLgr,
-                streetNumber: data.nfeProc.NFe.infNFe.dest.enderDest.nro,
+                street_number: data.nfeProc.NFe.infNFe.dest.enderDest.nro,
                 neighborhood: data.nfeProc.NFe.infNFe.dest.enderDest.xBairro,
-                cityCode: data.nfeProc.NFe.infNFe.dest.enderDest.cMun,
+                city_code: data.nfeProc.NFe.infNFe.dest.enderDest.cMun,
                 city: data.nfeProc.NFe.infNFe.dest.enderDest.xMun,
                 state: data.nfeProc.NFe.infNFe.dest.enderDest.UF,
-                zipCode: data.nfeProc.NFe.infNFe.dest.enderDest.CEP,
+                zip_code: data.nfeProc.NFe.infNFe.dest.enderDest.CEP,
                 phone: data.nfeProc.NFe.infNFe.dest.enderDest.fone
             });
 
@@ -66,17 +81,22 @@ export class ImportInvoiceFromXmlCommandHandler {
 
         // Create Invoice
         const invoice = Invoice.newFromJson({
-            access_key: accessKey,
-            issuerCnpj: companyIssuer.cnpj,
-            recipientCnpj: companyReceiver.cnpj,
-            quantity: data.nfeProc.NFe.infNFe.transp.vol.qVol,
-            gross_weight: data.nfeProc.NFe.infNFe.transp.vol.pesoL,
+            access_key: accessKey.toString(),
+            issuer_cnpj: companyIssuer.cnpj,
+            recipient_cnpj: companyReceiver.cnpj,
+            quantity: data.nfeProc.NFe.infNFe.transp.vol.qVol ?? 0,
+            gross_weight: data.nfeProc.NFe.infNFe.transp.vol.pesoB,
             total_value: data.nfeProc.NFe.infNFe.total.ICMSTot.vNF,
             issue_date: data.nfeProc.NFe.infNFe.ide.dhEmi,
             created_at: new Date()
         })
 
         await this.invoiceRepository.save(invoice);
+
+        return right()
     }
 
+    private getFileName(xmlPath:string) {
+        return xmlPath.split('/').pop() ?? '';
+    }
 }
