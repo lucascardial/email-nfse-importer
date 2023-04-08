@@ -24,7 +24,7 @@ jobs:
       - name: Deploy to Digital Ocean
         run: |
           git remote add server ssh://root@${{ secrets.DIGITAL_OCEAN_IP }}:22/var/repos/back.git
-          git push server main
+          git push server main --force
       - name: build node
         run: |
           ssh://root@${{ secrets.DIGITAL_OCEAN_IP }}
