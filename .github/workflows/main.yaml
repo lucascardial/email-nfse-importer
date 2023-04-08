@@ -6,7 +6,7 @@ on:
 
 defaults:
   run:
-    working-directory: /var/www/backend
+    working-directory: /var/www/back
 
 jobs:
   deploy:
