@@ -14,10 +14,10 @@ const handler = Container.resolve(ImportInvoiceFromXmlCommandHandler);
 async function run() {
   const config = {
     imap: {
-      user: "lucas@codeall.com.br",
-      password: "Sd34D!@#456",
-      host: "imap.secureserver.net",
-      port: 993,
+      user: process.env.IMAP_USER,
+      password: process.env.IMAP_PASSWORD,
+      host: process.env.IMAP_HOST,
+      port: process.env.IMAP_PORT,
       tls: true,
     },
   };
