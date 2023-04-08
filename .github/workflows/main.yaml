@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Deploy to Digital Ocean
         run: |
-          git remote add server ssh://root@${{ secrets.DIGITAL_OCEAN_IP }}:22/home/deployer/website
+          git remote add server ssh://root@${{ secrets.DIGITAL_OCEAN_IP }}:22/var/repos/back.git
           git push server main
       - name: build node
         run: |
