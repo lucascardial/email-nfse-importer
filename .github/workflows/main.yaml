@@ -7,15 +7,26 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add known hosts
+        run: |
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" > ~/.ssh/known_hosts
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Deploy to Digital Ocean
         run: |
           git remote add server ssh://root@${{ secrets.DIGITAL_OCEAN_IP }}:22/var/repos/back.git
           git push server main
       - name: build node
         run: |
+          ssh://root@${{ secrets.DIGITAL_OCEAN_IP }}
           cd /var/www/back
           yarn install
           yarn run build
