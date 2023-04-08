@@ -3,3 +3,4 @@ dist
 uploads
 downloads
 .env
+*.log
