@@ -1,0 +1,28 @@
+name: Deploy to Digital Ocean
+on:
+  push:
+    branches:
+      - main
+
+defaults:
+  run:
+    working-directory: /var/www/backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Deploy to Digital Ocean
+        run: |
+          git remote add server ssh://root@${{ secrets.DIGITAL_OCEAN_IP }}:22/home/deployer/website
+          git push server main
+      - name: build node
+        run: |
+          yarn install
+          yarn run build
+      - name: Restart Services
+        run: |
+          pm2 startOrRestart ecosystem.config.js --env production
+          
