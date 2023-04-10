@@ -1,4 +1,6 @@
 import xmlBuilder from "xmlbuilder";
+import moment from "moment"
+import { createObjectCsvWriter } from "csv-writer"
 import { writeFileSync } from "fs"
 import { inject, injectable } from "inversify";
 import { IDBClient } from "../../../../infrastructure/database/connection/commom/db-client.interface";
@@ -14,8 +16,64 @@ export class DaillyInvoicesXmlExportService {
     const yersterday = new Date(now);
     yersterday.setDate(yersterday.getDate() - 1);
 
-    const invoices = await this.getData(yersterday);
+    const fileName = moment(yersterday).format("YYYY-MM-DD");
 
+    const invoices = await this.getData(yersterday);
+    await this.buildXml(invoices, fileName);
+    await this.buildSheet(invoices, fileName);
+  }
+
+  private async buildSheet(invoices: DaillyInvoicesQueryResult[], fileName: string) {
+    const csvWriter = createObjectCsvWriter({
+      path: `reports/${fileName}.csv`,
+      header: [
+          { id: 'accessKey', title: 'Chave de Acesso' },
+          { id: 'issuerCnpj', title: 'CNPJ Emitente' },
+          { id: 'issuerName', title: 'Nome Emitente' },
+          { id: 'receiverCnpj', title: 'CNPJ Destinatário' },
+          { id: 'receiverName', title: 'Nome Destinatário' },
+          { id: 'street', title: 'Logradouro' },
+          { id: 'streetNumber', title: 'Número' },
+          { id: 'neighborhood', title: 'Bairro' },
+          { id: 'cityCode', title: 'Código Município' },
+          { id: 'city', title: 'Município' },
+          { id: 'state', title: 'UF' },
+          { id: 'zipCode', title: 'CEP' },
+          { id: 'phone', title: 'Telefone' },
+          { id: 'quantity', title: 'Quantidade' },
+          { id: 'grossWeight', title: 'Peso Bruto' },
+          { id: 'totalValue', title: 'Valor Total' },
+          { id: 'issueDate', title: 'Data de Emissão' },
+      ]
+  });
+  
+  const csvData = invoices.map((invoice) => {
+      return {
+          accessKey: invoice.accessKey,
+          issuerCnpj: invoice.issuerCnpj.toString(),
+          issuerName: invoice.issuerName,
+          receiverCnpj: invoice.receiverCnpj.toString(),
+          receiverName: invoice.receiverName,
+          street: invoice.street,
+          streetNumber: invoice.streetNumber,
+          neighborhood: invoice.neighborhood,
+          cityCode: invoice.cityCode,
+          city: invoice.city,
+          state: invoice.state,
+          zipCode: invoice.zipCode,
+          phone: invoice.phone,
+          quantity: invoice.quantity,
+          grossWeight: invoice.grossWeight,
+          totalValue: invoice.totalValue,
+          issueDate: invoice.issueDate.toISOString(),
+      }
+  })
+
+  csvWriter.writeRecords(csvData)
+      .then(() => console.log('Arquivo CSV gerado com sucesso!'));
+  }
+
+  private async buildXml(invoices: DaillyInvoicesQueryResult[], fileName: string) {
     const xml = xmlBuilder.create("NFSes", { encoding: "utf-8" });
 
     invoices.forEach((invoice) => {
@@ -78,7 +136,7 @@ export class DaillyInvoicesXmlExportService {
         .up();
     });
 
-    writeFileSync("invoices.xml", xml.end({ pretty: true }));
+    writeFileSync(`reports/${fileName}.xml`, xml.end({ pretty: true }));
   }
 
   private async getData(date: Date): Promise<DaillyInvoicesQueryResult[]> {
