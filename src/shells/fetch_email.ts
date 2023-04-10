@@ -23,16 +23,7 @@ async function run() {
       tls: true,
     },
   };
-
-  console.log({
-    user: process.env.IMAP_USER,
-    password: process.env.IMAP_PASSWORD,
-    host: process.env.IMAP_HOST,
-    port: process.env.IMAP_PORT,
-    tls: true,
-  });
   
-
   const imap = new MyImap(config);
   await imap.connect().then(() =>console.log('connected'));
   await imap.openBox();
