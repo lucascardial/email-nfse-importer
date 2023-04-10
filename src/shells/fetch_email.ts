@@ -50,8 +50,10 @@ async function run() {
     const emails = await imap.fetchEmails(criteria);
 
     for (const email of emails) {
+      console.log(email.files);
+      
       for (const file of email.files) {
-        if (file.mimetype !== "text/xml") continue;
+        if (!file.mimetype.includes("xml")) continue;
         const buffer = Buffer.from(file.buffer);
   
         try {
