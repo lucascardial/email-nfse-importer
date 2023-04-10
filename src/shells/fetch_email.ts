@@ -14,6 +14,11 @@ dotenv.config()
 const handler = Container.resolve(ImportInvoiceFromXmlCommandHandler);
 
 async function run() {
+  console.log({
+    host: process.env.IMAP_HOST,
+    port: process.env.IMAP_PORT,
+  });
+  
   const config = {
     imap: {
       user: process.env.IMAP_USER,
