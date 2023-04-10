@@ -1,3 +1,4 @@
+import * as dotenv from 'dotenv'; 
 import Container from "./container";
 import { writeFileSync } from "fs";
 import moment from "moment";
@@ -8,6 +9,7 @@ import { MyImap } from "../infrastructure/imap/imap.service";
 import { ImportInvoiceFromXmlCommandHandler } from "../application/invoice/commands/import-invoice-from-xml/import-invoice-from-xml-command-handler";
 import { ImportInvoiceFromXmlCommand } from "../application/invoice/commands/import-invoice-from-xml/import-invoice-from-xml-command";
 
+dotenv.config()
 
 const handler = Container.resolve(ImportInvoiceFromXmlCommandHandler);
 
