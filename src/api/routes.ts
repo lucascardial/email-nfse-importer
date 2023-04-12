@@ -12,7 +12,6 @@ import { DownloadReportController } from "./controllers/download-report.controll
 
 const routes = Router();
 
-routes.post("/email-webhook", (req, res) => container.resolve(EmailWebhookController).handle(req, res));
 routes.get('/list-errors', (req, res) => container.resolve(GetInvoiceErrorsController).handle(req, res));
 routes.get('/invoices', (req, res) => container.resolve(GetInvoiceByDateController).handle(req, res))
 routes.get('/invoices/issuer', (req, res) => container.resolve(GetInvoiceByIssuerController).handle(req, res))
