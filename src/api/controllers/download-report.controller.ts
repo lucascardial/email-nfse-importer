@@ -26,9 +26,13 @@ export class DownloadReportController {
                 message: "Arquivo não encontrado"
             });
         }
-
-        console.log(rootDir + '/' + reportFile.filePath);
         
-        return response.download(rootDir + '/' + reportFile.filePath, reportFile.fileName);
+        try {
+            return response.download(reportFile.filePath, reportFile.fileName);
+        } catch (error) {
+            return response.status(404).json({
+                message: "Arquivo não encontrado"
+            });
+        }
     }
 }
