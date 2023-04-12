@@ -1,21 +1,17 @@
 import { inject, injectable } from "inversify";
 import { IUserRepository } from "../../../application/persistence/user.repository";
 import { User } from "../../../domain/entities";
-import { IDBClient } from "../connection/commom/db-client.interface";
 import { IDBConnection } from "../connection/commom/db-connection.interface";
 
 @injectable()
 export class UserRepository implements IUserRepository {
-    private readonly dbClient: IDBClient;
-
     constructor(
-        @inject('IDBConnection') dbConnection: IDBConnection
-    ){
-        this.dbClient = dbConnection.getConnection();
+        @inject('IDBConnection')  private readonly dbConnection: IDBConnection
+    ) {
     }
 
     async save(user: User): Promise<void> {
-        await this.dbClient.query(`
+        await this.dbConnection.query(`
             INSERT INTO users (
                 login,
                 password
@@ -24,7 +20,7 @@ export class UserRepository implements IUserRepository {
     }
 
     async findByLogin(login: string): Promise<User | undefined> {
-        const { rows } = await this.dbClient.query(`
+        const { rows } = await this.dbConnection.query(`
             SELECT * FROM users WHERE login = $1`, [login]);
 
         if (!rows[0]) {
@@ -35,7 +31,7 @@ export class UserRepository implements IUserRepository {
     }
 
     async findAll(): Promise<User[]> {
-        const { rows } = await this.dbClient
+        const { rows } = await this.dbConnection
         .query(`SELECT * FROM users`);
 
         return rows.map((row: any) => new User(row.login, row.password));

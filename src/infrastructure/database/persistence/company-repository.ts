@@ -1,22 +1,17 @@
 import { injectable, inject } from "inversify";
 import { ICompanyRepository } from "../../../application/persistence";
 import { Company } from "../../../domain/entities";
-import { IDBClient } from "../connection/commom/db-client.interface";
 import { IDBConnection } from "../connection/commom/db-connection.interface";
 
 @injectable()
 export class CompanyRepository implements ICompanyRepository {
-
-    private readonly dbClient: IDBClient;
-
     constructor(
-        @inject('IDBConnection') dbConnection: IDBConnection
+        @inject('IDBConnection')  private readonly dbConnection: IDBConnection
     ) {
-        this.dbClient = dbConnection.getConnection();
     }
 
     async save(company: Company): Promise<void> {    
-        await this.dbClient.query(`
+        await this.dbConnection.query(`
             INSERT INTO companies (
                 cnpj,
                 facade_name,
@@ -68,7 +63,7 @@ export class CompanyRepository implements ICompanyRepository {
     async findByCnpj(cnpj: number): Promise<Company | undefined> {
         cnpj = parseInt(cnpj.toString(), 10)
 
-        const { rows, rowCount } = await this.dbClient.query(`
+        const { rows, rowCount } = await this.dbConnection.query(`
             SELECT * FROM companies WHERE cnpj = $1
         `, [cnpj]);
 

@@ -1,21 +1,17 @@
 import { inject, injectable } from "inversify";
 import { IInvoiceErrorRepository } from "../../../application/persistence";
 import { InvoiceError } from "../../../domain/entities";
-import { IDBClient } from "../connection/commom/db-client.interface";
 import { IDBConnection } from "../connection/commom/db-connection.interface";
 
 @injectable()
 export class InvoiceErrorRepository implements IInvoiceErrorRepository{
-    private readonly dbClient: IDBClient;
-
     constructor(
-        @inject('IDBConnection') dbConnection: IDBConnection
+        @inject('IDBConnection')  private readonly dbConnection: IDBConnection
     ) {
-        this.dbClient = dbConnection.getConnection();
     }
     
     async save(invoice_error: InvoiceError): Promise<void> {
-        await this.dbClient.query(`
+        await this.dbConnection.query(`
             INSERT INTO invoice_errors (
                 file_name,
                 errors
@@ -30,7 +26,7 @@ export class InvoiceErrorRepository implements IInvoiceErrorRepository{
     }
 
     async findByFileName(fileName: string): Promise<InvoiceError | undefined> {
-       const result = await this.dbClient.query(`
+       const result = await this.dbConnection.query(`
             SELECT * FROM invoice_errors WHERE file_name = $1
         `, [fileName]);
 
@@ -45,7 +41,7 @@ export class InvoiceErrorRepository implements IInvoiceErrorRepository{
     }
 
     async findAll(): Promise<InvoiceError[]> {
-        const { rows } = await this.dbClient.query(`
+        const { rows } = await this.dbConnection.query(`
             SELECT * FROM invoice_errors
         `);
 
