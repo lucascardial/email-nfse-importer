@@ -7,10 +7,15 @@ const server = express();
 const upload = multer({ dest: "uploads/" });
 
 server.use(cors({
-    origin: "*",
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: "Content-Type, Authorization, Content-Length, X-Requested-With"
+    origin: "*"
 }));
+
+server.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    next();
+});
 
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
