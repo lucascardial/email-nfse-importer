@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { container } from "./dependency-injection";
-import { EmailWebhookController } from "./controllers/email-webhook.controller";
 import { GetInvoiceErrorsController } from "./controllers/get-invoice-errors.controller";
 import { GetInvoiceByDateController } from "./controllers/get-invoices-by-date.controller";
 import { GetInvoiceByIssuerController } from "./controllers/get-invoices-by-issuer.controller";
