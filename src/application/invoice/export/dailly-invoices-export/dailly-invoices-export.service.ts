@@ -1,79 +1,105 @@
 import xmlBuilder from "xmlbuilder";
-import moment from "moment"
-import { createObjectCsvWriter } from "csv-writer"
-import { writeFileSync } from "fs"
+import moment from "moment";
+import { createObjectCsvWriter } from "csv-writer";
+import { writeFileSync } from "fs";
 import { inject, injectable } from "inversify";
 import { IDBClient } from "../../../../infrastructure/database/connection/commom/db-client.interface";
 import { DaillyInvoicesQueryResult } from "./types";
 import { Cnpj } from "../../../../domain/object-values/cnpj";
+import { IReportFileRepository } from "../../../persistence/report-file-repository.interface";
+import { ReportFile } from "../../../../domain/entities/report-file";
 
 @injectable()
 export class DaillyInvoicesXmlExportService {
-  constructor(@inject("IDBClient") private readonly idbClient: IDBClient) {}
+  constructor(
+    @inject("IDBClient") private readonly idbClient: IDBClient,
+    @inject("IReportFileRepository")
+    private readonly reportFileRepository: IReportFileRepository
+  ) {}
 
   async execute(): Promise<void> {
     const now = new Date();
     const yersterday = new Date(now);
     yersterday.setDate(yersterday.getDate() - 1);
 
-    const fileName = moment(yersterday).format("YYYY-MM-DD");
+    const date = moment(yersterday).format("YYYY-MM-DD");
 
     const invoices = await this.getData(yersterday);
-    await this.buildXml(invoices, fileName);
-    await this.buildSheet(invoices, fileName);
+    await this.buildXml(invoices, date);
+    await this.buildSheet(invoices, date);
   }
 
-  private async buildSheet(invoices: DaillyInvoicesQueryResult[], fileName: string) {
+  private async buildSheet(
+    invoices: DaillyInvoicesQueryResult[],
+    date: string
+  ) {
+    const fileType = "csv";
+    const fullPath = `reports/${date}.${fileType}`;
+
     const csvWriter = createObjectCsvWriter({
-      path: `reports/${fileName}.csv`,
+      path: fullPath,
       header: [
-          { id: 'accessKey', title: 'Chave de Acesso' },
-          { id: 'issuerCnpj', title: 'CNPJ Emitente' },
-          { id: 'issuerName', title: 'Nome Emitente' },
-          { id: 'receiverCnpj', title: 'CNPJ Destinatário' },
-          { id: 'receiverName', title: 'Nome Destinatário' },
-          { id: 'street', title: 'Logradouro' },
-          { id: 'streetNumber', title: 'Número' },
-          { id: 'neighborhood', title: 'Bairro' },
-          { id: 'cityCode', title: 'Código Município' },
-          { id: 'city', title: 'Município' },
-          { id: 'state', title: 'UF' },
-          { id: 'zipCode', title: 'CEP' },
-          { id: 'phone', title: 'Telefone' },
-          { id: 'quantity', title: 'Quantidade' },
-          { id: 'grossWeight', title: 'Peso Bruto' },
-          { id: 'totalValue', title: 'Valor Total' },
-          { id: 'issueDate', title: 'Data de Emissão' },
-      ]
-  });
-  
-  const csvData = invoices.map((invoice) => {
-      return {
-          accessKey: invoice.accessKey,
-          issuerCnpj: invoice.issuerCnpj.toString(),
-          issuerName: invoice.issuerName,
-          receiverCnpj: invoice.receiverCnpj.toString(),
-          receiverName: invoice.receiverName,
-          street: invoice.street,
-          streetNumber: invoice.streetNumber,
-          neighborhood: invoice.neighborhood,
-          cityCode: invoice.cityCode,
-          city: invoice.city,
-          state: invoice.state,
-          zipCode: invoice.zipCode,
-          phone: invoice.phone,
-          quantity: invoice.quantity,
-          grossWeight: invoice.grossWeight,
-          totalValue: invoice.totalValue,
-          issueDate: invoice.issueDate.toISOString(),
-      }
-  })
+        { id: "accessKey", title: "Chave de Acesso" },
+        { id: "issuerCnpj", title: "CNPJ Emitente" },
+        { id: "issuerName", title: "Nome Emitente" },
+        { id: "receiverCnpj", title: "CNPJ Destinatário" },
+        { id: "receiverName", title: "Nome Destinatário" },
+        { id: "street", title: "Logradouro" },
+        { id: "streetNumber", title: "Número" },
+        { id: "neighborhood", title: "Bairro" },
+        { id: "cityCode", title: "Código Município" },
+        { id: "city", title: "Município" },
+        { id: "state", title: "UF" },
+        { id: "zipCode", title: "CEP" },
+        { id: "phone", title: "Telefone" },
+        { id: "quantity", title: "Quantidade" },
+        { id: "grossWeight", title: "Peso Bruto" },
+        { id: "totalValue", title: "Valor Total" },
+        { id: "issueDate", title: "Data de Emissão" },
+      ],
+    });
 
-  csvWriter.writeRecords(csvData)
-      .then(() => console.log('Arquivo CSV gerado com sucesso!'));
+    const csvData = invoices.map((invoice) => {
+      return {
+        accessKey: invoice.accessKey,
+        issuerCnpj: invoice.issuerCnpj.toString(),
+        issuerName: invoice.issuerName,
+        receiverCnpj: invoice.receiverCnpj.toString(),
+        receiverName: invoice.receiverName,
+        street: invoice.street,
+        streetNumber: invoice.streetNumber,
+        neighborhood: invoice.neighborhood,
+        cityCode: invoice.cityCode,
+        city: invoice.city,
+        state: invoice.state,
+        zipCode: invoice.zipCode,
+        phone: invoice.phone,
+        quantity: invoice.quantity,
+        grossWeight: invoice.grossWeight,
+        totalValue: invoice.totalValue,
+        issueDate: invoice.issueDate.toISOString(),
+      };
+    });
+
+    csvWriter
+      .writeRecords(csvData)
+
+    const reportFile = new ReportFile({
+      fileName: `${date}.${fileType}`,
+      filePath: fullPath,
+      fileType,
+      createdAt: new Date(date),
+    });
+
+    await this.reportFileRepository.save(reportFile);
   }
 
-  private async buildXml(invoices: DaillyInvoicesQueryResult[], fileName: string) {
+  private async buildXml(
+    invoices: DaillyInvoicesQueryResult[],
+    date: string
+  ) {
+    const fileType = "xml";
+    const fullPath = `reports/${date}.${fileType}`;
     const xml = xmlBuilder.create("NFSes", { encoding: "utf-8" });
 
     invoices.forEach((invoice) => {
@@ -136,7 +162,16 @@ export class DaillyInvoicesXmlExportService {
         .up();
     });
 
-    writeFileSync(`reports/${fileName}.xml`, xml.end({ pretty: true }));
+    writeFileSync(fullPath, xml.end({ pretty: true }));
+
+    const reportFile = new ReportFile({
+      fileName: `${date}.${fileType}`,
+      filePath: fullPath,
+      fileType,
+      createdAt: new Date(date),
+    });
+
+    await this.reportFileRepository.save(reportFile);
   }
 
   private async getData(date: Date): Promise<DaillyInvoicesQueryResult[]> {
