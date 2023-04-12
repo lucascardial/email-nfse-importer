@@ -88,7 +88,7 @@ export class ImportInvoiceFromXmlCommandHandler {
             gross_weight: data.nfeProc.NFe.infNFe.transp.vol.pesoB,
             total_value: data.nfeProc.NFe.infNFe.total.ICMSTot.vNF,
             issue_date: data.nfeProc.NFe.infNFe.ide.dhEmi,
-            created_at: new Date()
+            created_at: command.receivedAt
         })
 
         await this.invoiceRepository.save(invoice);
