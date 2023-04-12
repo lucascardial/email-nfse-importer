@@ -11,8 +11,8 @@ module.exports = {
       autorestart: true,
     },
     {
-      name: "fetch email service",
-      script: "./dist/src/shells/fetch_email.js",
+      name: "mail service",
+      script: "./dist/src/mailer/server.js",
       autorestart: true,
     }
   ],
