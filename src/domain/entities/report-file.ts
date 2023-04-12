@@ -10,7 +10,7 @@ export class ReportFile {
     constructor(props: ReportFile) {
         this.uid = props.uid || v4();
         this.fileName = props.fileName;
-        this.filePath= props.fileName;
+        this.filePath= props.filePath;
         this.fileType = props.fileType;
         this.createdAt = props.createdAt;
     }
