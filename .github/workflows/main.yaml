@@ -31,5 +31,5 @@ jobs:
           git push server main --force
       - name: build node
         run: |
-          ssh root@${{ secrets.DIGITAL_OCEAN_IP }} -t 'cd /var/www/back && yarn && yarn tsc && pm2 startOrRestart ecosystem.config.js --env production'
+          ssh root@${{ secrets.DIGITAL_OCEAN_IP }} -t 'cd /var/www/back && yarn && npx tsc && pm2 startOrRestart ecosystem.config.js --env production'
           
