@@ -1,21 +1,21 @@
 import { inject, injectable } from "inversify";
-import { IDBClient } from "../../../../infrastructure/database/connection/commom/db-client.interface";
+import { IDBConnection } from "../../../../infrastructure/database/connection/commom/db-connection.interface";
 
 @injectable()
 export class GetIssuerCompaniesQueryHandler {
-    constructor(
-        @inject('IDBClient') private readonly dbClient: IDBClient
-    ) {}
+  constructor(
+    @inject("IDBConnection") private readonly dbConnection: IDBConnection
+  ) {}
 
-    async handle(): Promise<any[]> {
-        const { rows } = await this.dbClient.query(`
+  async handle(): Promise<any[]> {
+    const { rows } = await this.dbConnection.query(`
             SELECT DISTINCT
                 issuer.cnpj,
                 issuer.business_name AS issuer
             FROM invoices
             INNER JOIN companies AS issuer ON issuer.cnpj  = invoices.issuer_cnpj
         `);
-    
-        return rows
-    }
+
+    return rows;
+  }
 }

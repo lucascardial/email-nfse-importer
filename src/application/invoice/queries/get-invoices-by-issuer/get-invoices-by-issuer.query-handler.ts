@@ -1,10 +1,12 @@
 import { inject, injectable } from "inversify";
-import { IDBClient } from "../../../../infrastructure/database/connection/commom/db-client.interface";
 import { GetInvoiceByIssuerQuery } from "./get-invoices-by-issuer.query";
+import { IDBConnection } from "../../../../infrastructure/database/connection/commom/db-connection.interface";
 
 @injectable()
 export class GetInvoiceByIssuerQueryHandler {
-    constructor(@inject("IDBClient") private readonly dbClient: IDBClient) {}
+    constructor(
+    @inject("IDBConnection") private readonly dbConnection: IDBConnection,
+    ) {}
 
     async handle(query: GetInvoiceByIssuerQuery): Promise<any> {
         const date = query.date.toISOString().split('T')[0];
@@ -21,7 +23,7 @@ export class GetInvoiceByIssuerQueryHandler {
         }
 
         // Consulta para obter o número total de resultados
-        const totalQuery = await this.dbClient.query(`
+        const totalQuery = await this.dbConnection.query(`
             SELECT COUNT(DISTINCT companies.cnpj)
             FROM invoices
             INNER JOIN companies ON companies.cnpj = invoices.recipient_cnpj
@@ -39,7 +41,7 @@ export class GetInvoiceByIssuerQueryHandler {
             queryParams.push(receiverCnpj);
         }
         
-        const { rows } = await this.dbClient.query(`
+        const { rows } = await this.dbConnection.query(`
             SELECT 
                 receiver.cnpj,
                 receiver.business_name AS receiver,

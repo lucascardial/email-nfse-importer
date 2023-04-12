@@ -1,16 +1,16 @@
 import { inject, injectable } from "inversify";
-import { IDBClient } from "../../../../infrastructure/database/connection/commom/db-client.interface";
 import { GetReceiverCompaniesQuery } from "./get-receiver-companies.query";
+import { IDBConnection } from "../../../../infrastructure/database/connection/commom/db-connection.interface";
 
 @injectable()
 export class GetReceiverCompaniesQueryHandler {
     constructor(
-        @inject('IDBClient') private readonly dbClient: IDBClient
+        @inject('IDBConnection') private readonly dbConnection: IDBConnection
     ) {}
 
     async handle(command: GetReceiverCompaniesQuery): Promise<any[]> {
 
-        const { rows } = await this.dbClient.query(`
+        const { rows } = await this.dbConnection.query(`
             SELECT DISTINCT
                 companies.cnpj,
                 companies.business_name AS issuer

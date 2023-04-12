@@ -1,13 +1,14 @@
 import { inject, injectable } from "inversify";
-import { Invoice } from "../../../../domain/entities";
-import { IInvoiceRepository } from "../../../persistence";
 import { GetInvoiceByDateQuery } from "./get-invoice-by-date.query";
 import { IDBConnection } from "../../../../infrastructure/database/connection/commom/db-connection.interface";
-import { IDBClient } from "../../../../infrastructure/database/connection/commom/db-client.interface";
+import { IReportFileRepository } from "../../../persistence/report-file-repository.interface";
 
 @injectable()
 export class GetInvoiceByDateQueryHandler {
-  constructor(@inject("IDBClient") private readonly dbClient: IDBClient) {}
+  constructor(
+    @inject("IDBConnection") private readonly dbConnection: IDBConnection,
+    @inject("IReportFileRepository") private readonly reportRepository: IReportFileRepository
+    ) {}
 
   async handle(query: GetInvoiceByDateQuery): Promise<any> {
     return new Promise(async (resolve, reject) => {
@@ -26,7 +27,7 @@ export class GetInvoiceByDateQueryHandler {
       }
 
       // Consulta para obter o número total de resultados
-      const totalQuery = await this.dbClient.query(
+      const totalQuery = await this.dbConnection.query(
         `
             SELECT COUNT(DISTINCT companies.cnpj)
             FROM invoices
@@ -49,7 +50,7 @@ export class GetInvoiceByDateQueryHandler {
         queryParams.push(company);
       }
 
-      const { rows } = await this.dbClient.query(
+      const { rows } = await this.dbConnection.query(
         `
             SELECT 
                 companies.cnpj,
@@ -74,12 +75,19 @@ export class GetInvoiceByDateQueryHandler {
 
       const lastPage = Math.ceil(total / limit);
 
+      const reports = await this.reportRepository.findByDate(date);
+
+      const xmlReport = reports.find((report) => report.fileType === "xml");
+      const csvReport = reports.find((report) => report.fileType === "csv");
+
       const data = {
         meta: {
           total,
           page,
           lastPage: lastPage,
           limit,
+          xmlReport: xmlReport ? xmlReport.uid : null,
+          csvReport: csvReport ? csvReport.uid : null,
         },
         data: rows.map((row: any) => ({
           cnpj: row.cnpj,
