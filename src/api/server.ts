@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from "multer"
-import routes from './routes';
+import { PrivateRoutes, PublicRoutes } from './routes';
 import cors from 'cors';
 
 const server = express();
@@ -13,7 +13,7 @@ server.use(cors({
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 server.use(upload.any());
-server.use(routes);
-
+server.use(PublicRoutes);
+server.use(PrivateRoutes);
 
 export default server;
