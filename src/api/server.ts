@@ -6,8 +6,7 @@ import cors from "cors";
 const server = express();
 const upload = multer({ dest: "uploads/" });
 
-server.options("*", cors());
-
+server.use(cors());
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 server.use(upload.any());
