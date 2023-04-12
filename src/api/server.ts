@@ -1,14 +1,20 @@
-import express from 'express';
-import multer from "multer"
-import { PrivateRoutes, PublicRoutes } from './routes';
-import cors from 'cors';
+import express from "express";
+import multer from "multer";
+import { PrivateRoutes, PublicRoutes } from "./routes";
+import cors from "cors";
 
 const server = express();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: "uploads/" });
 
-server.use(cors({
-    origin: '*'
-}));
+server.use(cors());
+
+server.use((req, res, next) => {
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  next();
+});
 
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
