@@ -55,7 +55,6 @@ export class ValidateXml {
             'nfeProc.NFe.infNFe.dest.enderDest.UF',
             'nfeProc.NFe.infNFe.dest.enderDest.CEP',
             'nfeProc.NFe.infNFe.dest.enderDest.fone',
-            'nfeProc.NFe.infNFe.transp.vol.qVol',
             'nfeProc.NFe.infNFe.transp.vol.pesoL',
             'nfeProc.NFe.infNFe.total.ICMSTot.vNF',
             'nfeProc.NFe.infNFe.ide.dhEmi'

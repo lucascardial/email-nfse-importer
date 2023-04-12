@@ -229,7 +229,7 @@ export type InvoiceXml = {
   }
   
   export type Vol = {
-    qVol: number
+    qVol?: number
     esp: string
     pesoL: number
     pesoB: number

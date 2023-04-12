@@ -84,7 +84,7 @@ export class ImportInvoiceFromXmlCommandHandler {
             access_key: accessKey.toString(),
             issuer_cnpj: companyIssuer.cnpj,
             recipient_cnpj: companyReceiver.cnpj,
-            quantity: data.nfeProc.NFe.infNFe.transp.vol.qVol ?? 0,
+            quantity: data.nfeProc.NFe.infNFe.transp.vol.qVol ?? 1,
             gross_weight: data.nfeProc.NFe.infNFe.transp.vol.pesoB,
             total_value: data.nfeProc.NFe.infNFe.total.ICMSTot.vNF,
             issue_date: data.nfeProc.NFe.infNFe.ide.dhEmi,
