@@ -6,11 +6,7 @@ import cors from "cors";
 const server = express();
 const upload = multer({ dest: "uploads/" });
 
-if(process.env.NODE_ENV === "production") {
-    server.use(cors({
-        origin: ["https://painel.deshowexpress.com.br"],
-    }));
-}
+server.options("*", cors());
 
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
