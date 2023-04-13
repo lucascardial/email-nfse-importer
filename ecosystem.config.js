@@ -7,7 +7,7 @@ module.exports = {
     },
     {
       name: "job worker",
-      script: "./dist/src/jobs/application.js",
+      script: "./dist/src/jobs/executor.js",
       autorestart: true,
     },
     {
