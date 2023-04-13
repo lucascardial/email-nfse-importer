@@ -7,7 +7,8 @@ import { RegisterCommandHandler } from "./authentication/command/register/regist
 import { LoginQueryHandler } from "./authentication/querie/login/login.query.handler";
 import { GetIssuerCompaniesQueryHandler } from "./invoice/queries/get-issuer-companies/get-issuer-companies.query.handler";
 import { GetReceiverCompaniesQueryHandler } from "./invoice/queries/get-receiver-companies/get-receiver-companies.query.handler";
-import { DaillyInvoicesXmlExportService } from "./invoice/export/dailly-invoices-export/dailly-invoices-export.service";
+import { GenerateDaillyReportJob } from "./invoice/jobs/dailly-report/generate-dailly-report.job";
+import { SendDaillyReportToEmail } from "./invoice/email/send-dailly-report.email";
   
 declare module "inversify" {
     interface Container {
@@ -24,7 +25,8 @@ Container.prototype.addApplication = function() {
     this.bind(LoginQueryHandler).toSelf();
     this.bind(GetIssuerCompaniesQueryHandler).toSelf()
     this.bind(GetReceiverCompaniesQueryHandler).toSelf()
-    this.bind(DaillyInvoicesXmlExportService).toSelf()
+    this.bind(GenerateDaillyReportJob).toSelf()
+    this.bind(SendDaillyReportToEmail).toSelf()
 
     return this;
 }
