@@ -27,7 +27,7 @@
   "scripts": {
     "start": "ts-node src/api/application",
     "dev": "nodemon",
-    "build": "tsc --clean"
+    "build": "tsc -b --clean"
   },
   "dependencies": {
     "@types/node": "^18.15.11",
