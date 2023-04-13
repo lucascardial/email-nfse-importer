@@ -3,38 +3,44 @@ import moment from "moment";
 import { createObjectCsvWriter } from "csv-writer";
 import { writeFileSync } from "fs";
 import { inject, injectable } from "inversify";
-import { IDBClient } from "../../../../infrastructure/database/connection/commom/db-client.interface";
 import { DaillyInvoicesQueryResult } from "./types";
 import { Cnpj } from "../../../../domain/object-values/cnpj";
 import { IReportFileRepository } from "../../../persistence/report-file-repository.interface";
 import { ReportFile } from "../../../../domain/entities/report-file";
+import { SendDaillyReportToEmail } from "../../email/send-dailly-report.email";
+import { JobExecutor } from "../common/job-executor.interface";
+import { IDBConnection } from "../../../../infrastructure/database/connection/commom/db-connection.interface";
 
 @injectable()
-export class DaillyInvoicesXmlExportService {
+export class GenerateDaillyReportJob implements JobExecutor {
   constructor(
-    @inject("IDBClient") private readonly idbClient: IDBClient,
+    @inject("IDBConnection")
+      private readonly dbConnection: IDBConnection,
     @inject("IReportFileRepository")
-    private readonly reportFileRepository: IReportFileRepository
+      private readonly reportFileRepository: IReportFileRepository,
+    @inject(SendDaillyReportToEmail)
+      private readonly sendDaillyReportToEmail: SendDaillyReportToEmail
   ) {}
 
-  async execute(): Promise<void> {
-    const now = new Date();
+  async execute(now: Date): Promise<void> {
     const yersterday = new Date(now);
     yersterday.setDate(yersterday.getDate() - 1);
 
-    const date = moment(yersterday).format("YYYY-MM-DD");
-
     const invoices = await this.getData(yersterday);
-    await this.buildXml(invoices, date);
-    await this.buildSheet(invoices, date);
+    await this.buildXml(invoices, yersterday);
+    await this.buildSheet(invoices, yersterday);
+
+    await this.sendDaillyReportToEmail.execute(yersterday);
   }
 
   private async buildSheet(
     invoices: DaillyInvoicesQueryResult[],
-    date: string
+    date: Date
   ) {
+    const humanDate = moment(date).format("YYYY-MM-DD");
+
     const fileType = "csv";
-    const fullPath = `reports/${date}.${fileType}`;
+    const fullPath = `reports/${humanDate}.${fileType}`;
 
     const csvWriter = createObjectCsvWriter({
       path: fullPath,
@@ -77,7 +83,7 @@ export class DaillyInvoicesXmlExportService {
         quantity: invoice.quantity,
         grossWeight: invoice.grossWeight,
         totalValue: invoice.totalValue,
-        issueDate: invoice.issueDate.toISOString(),
+        issueDate: moment(invoice.issueDate).format("YYYY-MM-DD"),
       };
     });
 
@@ -85,10 +91,10 @@ export class DaillyInvoicesXmlExportService {
       .writeRecords(csvData)
 
     const reportFile = new ReportFile({
-      fileName: `${date}.${fileType}`,
+      fileName: `${humanDate}.${fileType}`,
       filePath: fullPath,
       fileType,
-      createdAt: new Date(date),
+      createdAt: date,
     });
 
     await this.reportFileRepository.save(reportFile);
@@ -96,14 +102,19 @@ export class DaillyInvoicesXmlExportService {
 
   private async buildXml(
     invoices: DaillyInvoicesQueryResult[],
-    date: string
+    date: Date
   ) {
+    const humanDate = moment(date).format("YYYY-MM-DD");
+
     const fileType = "xml";
-    const fullPath = `reports/${date}.${fileType}`;
+    const fullPath = `reports/${humanDate}.${fileType}`;
     const xml = xmlBuilder.create("NFSes", { encoding: "utf-8" });
 
+    xml.ele("DataReferencia").txt(humanDate).up();
+    const xmlInvoices = xml.ele("Documentos");
+
     invoices.forEach((invoice) => {
-      xml
+      xmlInvoices
         .ele("NFSe")
         .ele("chNFe")
         .text(invoice.accessKey)
@@ -165,17 +176,18 @@ export class DaillyInvoicesXmlExportService {
     writeFileSync(fullPath, xml.end({ pretty: true }));
 
     const reportFile = new ReportFile({
-      fileName: `${date}.${fileType}`,
+      fileName: `${humanDate}.${fileType}`,
       filePath: fullPath,
       fileType,
-      createdAt: new Date(date),
+      createdAt: date,
     });
 
     await this.reportFileRepository.save(reportFile);
   }
 
   private async getData(date: Date): Promise<DaillyInvoicesQueryResult[]> {
-    const { rows } = await this.idbClient.query(`
+
+    const { rows } = await this.dbConnection.query(`
         SELECT 
             invoices.access_key,
             issuer.cnpj AS issuer_cnpj,
@@ -196,8 +208,12 @@ export class DaillyInvoicesXmlExportService {
             invoices.issue_date 
         FROM invoices
         INNER JOIN companies issuer ON issuer.cnpj = invoices.issuer_cnpj 
-        INNER JOIN companies receiver ON receiver.cnpj = invoices.recipient_cnpj 
-        `);
+        INNER JOIN companies receiver ON receiver.cnpj = invoices.recipient_cnpj
+        WHERE invoices.created_at between $1 AND $2
+        `, [
+          moment(date).startOf("day").toISOString(),
+          moment(date).endOf("day").toISOString(),
+        ]);
 
     return rows.map(
       (row: Record<string, never>): DaillyInvoicesQueryResult => ({
