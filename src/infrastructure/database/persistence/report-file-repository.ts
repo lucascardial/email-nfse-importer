@@ -2,6 +2,7 @@ import { inject, injectable } from "inversify";
 import { IReportFileRepository } from "../../../application/persistence/report-file-repository.interface";
 import { ReportFile } from "../../../domain/entities/report-file";
 import { IDBConnection } from "../connection/commom/db-connection.interface";
+import moment from "moment";
 
 @injectable()
 export class ReportFileRepository implements IReportFileRepository {
@@ -35,6 +36,17 @@ export class ReportFileRepository implements IReportFileRepository {
   }
 
   async save(reportFile: ReportFile): Promise<void> {
+
+    // delete oldest version of the file
+    const queryDelete = `
+            DELETE FROM report_files
+            WHERE filename = $1
+        `;
+
+    const paramsDelete = [reportFile.fileName];
+
+    await this.dbConnection.query(queryDelete, paramsDelete);
+
     const query = `
             INSERT INTO report_files (uid, filename, filepath, filetype, created_at)
             VALUES ($1, $2, $3, $4, $5)
@@ -45,23 +57,18 @@ export class ReportFileRepository implements IReportFileRepository {
       reportFile.fileName,
       reportFile.filePath,
       reportFile.fileType,
-      reportFile.createdAt,
+      moment(reportFile.createdAt).format("YYYY-MM-DD"),
     ];
 
     await this.dbConnection.query(query, params);
   }
 
-  async findByDate(date: string): Promise<ReportFile[]> {
+  async findByDate(date: Date): Promise<ReportFile[]> {
     const query = `
             SELECT * FROM report_files
             WHERE created_at = $1
         `;
-    const params = [date];
-
-    console.log(`
-SELECT * FROM report_files
-WHERE created_at = ${date}
-`);
+    const params = [moment(date).format("YYYY-MM-DD")];
 
     const result = await this.dbConnection.query(query, params);
 
