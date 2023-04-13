@@ -11,7 +11,7 @@ export class GetIssuerCompaniesQueryHandler {
     const { rows } = await this.dbConnection.query(`
             SELECT DISTINCT
                 issuer.cnpj,
-                issuer.business_name AS issuer
+                concat(companies.business_name, ' (', companies.cnpj, ')')  AS issuer
             FROM invoices
             INNER JOIN companies AS issuer ON issuer.cnpj  = invoices.issuer_cnpj
         `);
