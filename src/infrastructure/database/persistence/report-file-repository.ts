@@ -57,18 +57,19 @@ export class ReportFileRepository implements IReportFileRepository {
       reportFile.fileName,
       reportFile.filePath,
       reportFile.fileType,
-      moment(reportFile.createdAt).format("YYYY-MM-DD"),
+      moment.utc(reportFile.createdAt).format("YYYY-MM-DD"),
     ];
 
     await this.dbConnection.query(query, params);
   }
 
   async findByDate(date: Date): Promise<ReportFile[]> {
+
     const query = `
             SELECT * FROM report_files
             WHERE created_at = $1
         `;
-    const params = [moment(date).format("YYYY-MM-DD")];
+    const params = [moment.utc(date).format("YYYY-MM-DD")];
 
     const result = await this.dbConnection.query(query, params);
 

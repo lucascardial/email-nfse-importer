@@ -37,7 +37,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
     invoices: DaillyInvoicesQueryResult[],
     date: Date
   ) {
-    const humanDate = moment(date).format("YYYY-MM-DD");
+    const humanDate = moment.utc(date).format("YYYY-MM-DD");
 
     const fileType = "csv";
     const fullPath = `reports/${humanDate}.${fileType}`;
@@ -83,7 +83,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
         quantity: invoice.quantity,
         grossWeight: invoice.grossWeight,
         totalValue: invoice.totalValue,
-        issueDate: moment(invoice.issueDate).format("YYYY-MM-DD"),
+        issueDate: moment.utc(invoice.issueDate).format("YYYY-MM-DD"),
       };
     });
 
@@ -104,7 +104,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
     invoices: DaillyInvoicesQueryResult[],
     date: Date
   ) {
-    const humanDate = moment(date).format("YYYY-MM-DD");
+    const humanDate = moment.utc(date).format("YYYY-MM-DD");
 
     const fileType = "xml";
     const fullPath = `reports/${humanDate}.${fileType}`;
@@ -186,7 +186,6 @@ export class GenerateDaillyReportJob implements JobExecutor {
   }
 
   private async getData(date: Date): Promise<DaillyInvoicesQueryResult[]> {
-
     const { rows } = await this.dbConnection.query(`
         SELECT 
             invoices.access_key,
@@ -211,8 +210,8 @@ export class GenerateDaillyReportJob implements JobExecutor {
         INNER JOIN companies receiver ON receiver.cnpj = invoices.recipient_cnpj
         WHERE invoices.created_at between $1 AND $2
         `, [
-          moment(date).startOf("day").toISOString(),
-          moment(date).endOf("day").toISOString(),
+          moment.utc(date).startOf("day").toISOString(),
+          moment.utc(date).endOf("day").toISOString(),
         ]);
 
     return rows.map(

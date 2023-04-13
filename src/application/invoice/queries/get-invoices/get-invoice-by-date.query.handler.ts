@@ -74,7 +74,6 @@ export class GetInvoiceByDateQueryHandler {
       );
 
       const lastPage = Math.ceil(total / limit);
-
       const reports = await this.reportRepository.findByDate(query.date);
 
       const xmlReport = reports.find((report) => report.fileType === "xml");

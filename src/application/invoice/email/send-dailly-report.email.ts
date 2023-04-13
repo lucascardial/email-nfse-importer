@@ -12,15 +12,14 @@ export class SendDaillyReportToEmail {
 
     async execute(date: Date): Promise<void> {
         const reportFiles = await this.repository.findByDate(date);
-
-        console.log("reports", moment(date).format("YYYY-MM-DD"));
         
-        const humanDate = moment(date).format("DD/MM/YYYY");
+        const humanDate = moment.utc(date).format("DD/MM/YYYY");
 
         const mailOptions: MailOptions = {
             from: process.env.SMTP_USER!,
+            // to: ['lucas@codeall.com.br'],
             to: ['lucas@codeall.com.br', 'higornoleto@deshowexpress.com.br', 'adm-slz@deshowexpress.com.br'],
-            subject: `Relatório diário de notas recebidas em ${humanDate}`,
+            subject: `[ERRATA] Relatório diário de notas recebidas em ${humanDate}`,
             text: `Não houve notas recebidas em ${humanDate}.`,
             html: `<h3>Não houve notas recebidas em ${humanDate}.</h3>`,
         };

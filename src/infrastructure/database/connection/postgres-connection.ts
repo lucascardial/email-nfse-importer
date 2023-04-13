@@ -9,8 +9,6 @@ export class PostgresConnection implements IDBConnection {
     private client?: PoolClient;
 
     constructor() {
-        console.log("PostgresConnection: constructor");
-        
         const ssl = process.env.DB_SSL === "enabled" ? { rejectUnauthorized: false } : false;
 
         this.pool = new Pool({
