@@ -13,6 +13,8 @@ import { JwtService } from "./jwt/jwt-service";
 import { IJwt } from "../application/authentication/commom/jwt.interface";
 import { IReportFileRepository } from "../application/persistence/report-file-repository.interface";
 import { ReportFileRepository } from "./database/persistence/report-file-repository";
+import { IMailSender } from "../application/invoice/email/common/mail-sender.interface";
+import { MailSender } from "./mailer/sender/mail-sender.service";
 
 declare module "inversify" {
     interface Container {
@@ -27,11 +29,13 @@ Container.prototype.addInfrastructure = function() {
     this.bind<ICompanyRepository>('ICompanyRepository').to(CompanyRepository);
     this.bind<IInvoiceErrorRepository>('IInvoiceErrorRepository').to(InvoiceErrorRepository);
     this.bind<IUserRepository>('IUserRepository').to(UserRepository);
-    this.bind<IReportFileRepository>('IReportFileRepository').to(ReportFileRepository)
+    this.bind<IReportFileRepository>('IReportFileRepository').to(ReportFileRepository);
 
     this.bind<IJwt>('IJwt').to(JwtService);
     this.bind<IXmlFileReader>('IXmlFileReader').to(XmlFileReader);
     this.bind<IHasher>('IHasher').to(BcryptAdapter);
+
+    this.bind<IMailSender>('IMailSender').to(MailSender).inSingletonScope();
     
     return this;
 }
