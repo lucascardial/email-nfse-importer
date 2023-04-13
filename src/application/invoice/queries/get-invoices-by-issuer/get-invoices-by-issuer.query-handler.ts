@@ -43,6 +43,7 @@ export class GetInvoiceByIssuerQueryHandler {
         
         const { rows } = await this.dbConnection.query(`
             SELECT 
+                invoices.access_key,
                 receiver.cnpj,
                 receiver.business_name AS receiver,
                 invoices.quantity,
@@ -67,6 +68,7 @@ export class GetInvoiceByIssuerQueryHandler {
                 limit,
             },
             data: rows.map((row: any) => ({
+                accessKey: row.access_key,
                 cnpj: row.cnpj,
                 receiver: row.receiver,
                 quantity: row.quantity,
