@@ -19,7 +19,7 @@ export class SendDaillyReportToEmail {
             from: process.env.SMTP_USER!,
             // to: ['lucas@codeall.com.br'],
             to: ['lucas@codeall.com.br', 'higornoleto@deshowexpress.com.br', 'adm-slz@deshowexpress.com.br'],
-            subject: `[ERRATA] Relatório diário de notas recebidas em ${humanDate}`,
+            subject: `Relatório diário de notas recebidas em ${humanDate}`,
             text: `Não houve notas recebidas em ${humanDate}.`,
             html: `<h3>Não houve notas recebidas em ${humanDate}.</h3>`,
         };
