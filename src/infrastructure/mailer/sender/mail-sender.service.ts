@@ -26,6 +26,7 @@ export class MailSender implements IMailSender {
 
     async sendMail(mailOptions: MailOptions): Promise<void> {
         await this._transporter.sendMail(mailOptions);
+        console.log(`Email sent to ${mailOptions.to}`);
     }
 
     private validateEnvVariables(): void {
