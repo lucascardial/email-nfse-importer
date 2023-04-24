@@ -9,6 +9,12 @@ import { GetIssuerCompaniesQueryHandler } from "./invoice/queries/get-issuer-com
 import { GetReceiverCompaniesQueryHandler } from "./invoice/queries/get-receiver-companies/get-receiver-companies.query.handler";
 import { GenerateDaillyReportJob } from "./invoice/jobs/dailly-report/generate-dailly-report.job";
 import { SendDaillyReportToEmail } from "./invoice/email/send-dailly-report.email";
+import { SearchCitiesQueryHandler } from "./city/queries/search-cities/search-cities.query-handler";
+import { GetRoutesQueryHandler } from "./route/queries/get-routes/get-routes.query-handler";
+import { CreateRouteCommandHandler } from "./route/commands/create-route/create-route.comand-handler";
+import { AddCityCommandHandler } from "./route/commands/add-city/add-city.command-handler";
+import { RemoveCityCommandHandler } from "./route/commands/remove-city/remove-city.command-handler";
+import { DeleteRouteCommandHandler } from "./route/commands/delete-route/delete-route.command-handler";
   
 declare module "inversify" {
     interface Container {
@@ -27,6 +33,13 @@ Container.prototype.addApplication = function() {
     this.bind(GetReceiverCompaniesQueryHandler).toSelf()
     this.bind(GenerateDaillyReportJob).toSelf()
     this.bind(SendDaillyReportToEmail).toSelf()
+    this.bind(SearchCitiesQueryHandler).toSelf()
+    this.bind(GetRoutesQueryHandler).toSelf()
+    this.bind(CreateRouteCommandHandler).toSelf()
+    this.bind(AddCityCommandHandler).toSelf()
+    this.bind(RemoveCityCommandHandler).toSelf()
+    this.bind(DeleteRouteCommandHandler).toSelf()
+
 
     return this;
 }

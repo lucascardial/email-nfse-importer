@@ -1,6 +1,6 @@
 import { Container } from "inversify";
-import { ICompanyRepository, IInvoiceErrorRepository, IInvoiceRepository } from "../application/persistence";
-import { InvoiceRepository, CompanyRepository, InvoiceErrorRepository } from "./database/persistence";
+import { ICompanyRepository, IInvoiceErrorRepository, IInvoiceRepository, ICityRepostory, IRouteRepository } from "../application/persistence";
+import { InvoiceRepository, CompanyRepository, InvoiceErrorRepository, CityRepository } from "./database/persistence";
 import { IXmlFileReader } from "../application/commom/services";
 import { XmlFileReader } from "./file-reader/xml/xml-file-reader";
 import { IDBConnection } from "./database/connection/commom/db-connection.interface";
@@ -15,6 +15,7 @@ import { IReportFileRepository } from "../application/persistence/report-file-re
 import { ReportFileRepository } from "./database/persistence/report-file-repository";
 import { IMailSender } from "../application/invoice/email/common/mail-sender.interface";
 import { MailSender } from "./mailer/sender/mail-sender.service";
+import { RouteRepository } from "./database/persistence/route.repository";
 
 declare module "inversify" {
     interface Container {
@@ -30,6 +31,8 @@ Container.prototype.addInfrastructure = function() {
     this.bind<IInvoiceErrorRepository>('IInvoiceErrorRepository').to(InvoiceErrorRepository);
     this.bind<IUserRepository>('IUserRepository').to(UserRepository);
     this.bind<IReportFileRepository>('IReportFileRepository').to(ReportFileRepository);
+    this.bind<ICityRepostory>('ICityRepostory').to(CityRepository);
+    this.bind<IRouteRepository>('IRouteRepository').to(RouteRepository);
 
     this.bind<IJwt>('IJwt').to(JwtService);
     this.bind<IXmlFileReader>('IXmlFileReader').to(XmlFileReader);
