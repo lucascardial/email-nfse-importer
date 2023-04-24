@@ -24,7 +24,8 @@ export class GetRoutesQueryHandler {
                 routes.id AS route_uid,
                 routes.name AS route_name,
                 c.code AS city_code,
-                c.name AS city_name
+                c.name AS city_name,
+                c.uf as city_uf
             FROM routes 
             LEFT JOIN route_cities rc ON rc.route_id = routes.id 
             LEFT JOIN cities c ON c.code = rc.city_code
@@ -32,7 +33,7 @@ export class GetRoutesQueryHandler {
             `)
             
         rows.forEach((row: Record<string, never>) => {
-            const { route_uid, route_name, city_code, city_name } = row;
+            const { route_uid, route_name, city_code, city_name, city_uf } = row;
             if (!tuples.has(route_uid)) {
               const tuple: TupleResult = {
                 uid: route_uid,
@@ -44,7 +45,7 @@ export class GetRoutesQueryHandler {
             }
             
             if(city_code && city_name) {
-                const city = { code: city_code, name: city_name };
+                const city = { code: city_code, name: `${city_name} - ${city_uf}` };
                 tuples.get(route_uid)?.cities.push(city);
             }
           });
