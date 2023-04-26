@@ -326,7 +326,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
       INNER JOIN companies receiver ON receiver.cnpj = invoices.recipient_cnpj
       LEFT  JOIN route_cities rc ON rc.city_code = receiver.city_code
       LEFT JOIN routes ON routes.id = rc.route_id
-      WHERE invoices.created_at between '2023-04-25 00:00:00' AND '2023-04-25 23:59:59'
+      WHERE invoices.created_at between $1 AND $2
       ORDER BY COALESCE(routes.name) ASC NULLS FIRST, receiver.city , receiver.neighborhood
       `, [
           moment.utc(date).startOf("day").toISOString(),
