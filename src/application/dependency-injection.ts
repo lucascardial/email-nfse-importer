@@ -40,8 +40,6 @@ Container.prototype.addApplication = function() {
     this.bind(AddCityCommandHandler).toSelf()
     this.bind(RemoveCityCommandHandler).toSelf()
     this.bind(DeleteRouteCommandHandler).toSelf()
-    this.bind(RouteReport).toSelf()
-
 
     return this;
 }
