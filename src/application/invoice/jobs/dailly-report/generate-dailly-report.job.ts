@@ -10,6 +10,7 @@ import { ReportFile } from "../../../../domain/entities/report-file";
 import { SendDaillyReportToEmail } from "../../email/send-dailly-report.email";
 import { JobExecutor } from "../common/job-executor.interface";
 import { IDBConnection } from "../../../../infrastructure/database/connection/commom/db-connection.interface";
+import * as ExcelJS from "exceljs";
 
 @injectable()
 export class GenerateDaillyReportJob implements JobExecutor {
@@ -29,6 +30,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
     const invoices = await this.getData(yersterday);
     await this.buildXml(invoices, yersterday);
     await this.buildSheet(invoices, yersterday);
+    await this.routesSheet(invoices, yersterday);
 
     await this.sendDaillyReportToEmail.execute(yersterday);
   }
@@ -185,30 +187,147 @@ export class GenerateDaillyReportJob implements JobExecutor {
     await this.reportFileRepository.save(reportFile);
   }
 
+  public async routesSheet(invoices: DaillyInvoicesQueryResult[],
+    date: Date): Promise<any> {
+    const humanDate = moment.utc(date).format("YYYY-MM-DD");
+
+    const fileType = "xlsx";
+    const fullPath = `reports/rotas-${humanDate}.${fileType}`;
+
+    interface MergeInfo {
+      start: number;
+      end: number;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Planilha 1");
+
+    // Cabeçalho da tabela
+    worksheet.columns = [
+      { key: "rota", header: "Rota" },
+      { key: "city", header: "Município" },
+      { key: "state", header: "UF" },
+      { key: "neighborhood", header: "Bairro" },
+      { key: "street", header: "Logradouro" },
+      { key: "streetNumber", header: "Número" },
+      { key: "accessKey", header: "Chave de Acesso" },
+      { key: "issuerCnpj", header: "CNPJ Emitente" },
+      { key: "issuerName", header: "Nome Emitente" },
+      { key: "receiverCnpj", header: "CNPJ Destinatário" },
+      { key: "receiverName", header: "Nome Destinatário" },
+      { key: "zipCode", header: "CEP" },
+      { key: "phone", header: "Telefone" },
+      { key: "quantity", header: "Quantidade" },
+      { key: "grossWeight", header: "Peso Bruto" },
+      { key: "totalValue", header: "Valor Total" },
+      { key: "issueDate", header: "Data de Emissão" },
+    ];
+
+    invoices.forEach((row) => worksheet.addRow({
+      ...row,
+      issuerCnpj: row.issuerCnpj.toString(),
+      receiverCnpj: row.receiverCnpj.toString(),
+    }));
+
+    const mergeData: Record<string, MergeInfo> = {};
+
+    worksheet.eachRow((row, rowNumber) => {
+      const currentValue = row.getCell("rota").value as string;
+      if (mergeData[currentValue]) {
+        mergeData[currentValue].end = rowNumber;
+      } else {
+        mergeData[currentValue] = {
+          start: rowNumber,
+          end: rowNumber,
+        };
+      }
+    });
+
+    Object.keys(mergeData).forEach((key) => {
+      const mergeInfo = mergeData[key];
+      if (mergeInfo.start !== mergeInfo.end) {
+        worksheet.mergeCells(`A${mergeInfo.start}:A${mergeInfo.end}`);
+      }
+    });
+
+    worksheet.getColumn('rota').eachCell((cell: any, rowNumber) => {
+      const mergeInfo = mergeData[cell.value];
+      if (mergeInfo) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      }
+    });
+
+    let isOdd = false;
+    worksheet.eachRow((row, rowNumber) => {
+      const mergeInfo = mergeData[row.getCell("rota").value as string];
+      if (mergeInfo && mergeInfo.start === rowNumber) {
+        isOdd = !isOdd;
+      }
+      if (isOdd) {
+        row.eachCell((cell) => {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "E0E0E0" },
+          };
+        });
+      }
+    });
+
+    worksheet.columns.forEach((column: any) => {
+      column.width =
+        Math.max(
+          column.header.length,
+          ...column.values.map((value: any) => String(value).length)
+        ) + 2;
+    });
+
+    const dataColumn = worksheet.getColumn(
+      worksheet.getColumnKey("issueDate").number
+    );
+
+    dataColumn.numFmt = "dd/mm/yyyy";
+
+    await workbook.xlsx.writeFile(fullPath);
+
+    const reportFile = new ReportFile({
+      fileName: `rotas-${humanDate}.${fileType}`,
+      filePath: fullPath,
+      fileType,
+      createdAt: date,
+    });
+
+    await this.reportFileRepository.save(reportFile);
+  }
+
   private async getData(date: Date): Promise<DaillyInvoicesQueryResult[]> {
     const { rows } = await this.dbConnection.query(`
-        SELECT 
-            invoices.access_key,
-            issuer.cnpj AS issuer_cnpj,
-            issuer.business_name AS issuer_name,
-            receiver.cnpj AS receiver_cnpj,
-            receiver.business_name AS receiver_name,
-            receiver.street,
-            receiver.street_number,
-            receiver.neighborhood,
-            receiver.city_code,
-            receiver.city,
-            receiver.state,
-            receiver.zip_code,
-            receiver.phone,
-            invoices.quantity,
-            invoices.gross_weight,
-            invoices.total_value,
-            invoices.issue_date 
-        FROM invoices
-        INNER JOIN companies issuer ON issuer.cnpj = invoices.issuer_cnpj 
-        INNER JOIN companies receiver ON receiver.cnpj = invoices.recipient_cnpj
-        WHERE invoices.created_at between $1 AND $2
+      SELECT 
+        routes.name as rota,
+        invoices.access_key,
+        issuer.cnpj AS issuer_cnpj,
+        issuer.business_name AS issuer_name,
+        receiver.cnpj AS receiver_cnpj,
+        receiver.business_name AS receiver_name,
+        receiver.street,
+        receiver.street_number,
+        receiver.neighborhood,
+        receiver.city_code,
+        receiver.city,
+        receiver.state,
+        receiver.zip_code,
+        receiver.phone,
+        invoices.quantity,
+        invoices.gross_weight,
+        invoices.total_value,
+        invoices.issue_date 
+      FROM invoices
+      INNER JOIN companies issuer ON issuer.cnpj = invoices.issuer_cnpj 
+      INNER JOIN companies receiver ON receiver.cnpj = invoices.recipient_cnpj
+      INNER JOIN route_cities rc ON rc.city_code = receiver.city_code
+      INNER JOIN routes ON routes.id = rc.route_id
+      WHERE invoices.created_at between $1 AND $2
+      ORDER BY routes.name, receiver.city , receiver.neighborhood
         `, [
           moment.utc(date).startOf("day").toISOString(),
           moment.utc(date).endOf("day").toISOString(),
@@ -216,6 +335,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
 
     return rows.map(
       (row: Record<string, never>): DaillyInvoicesQueryResult => ({
+        rota: row.rota,
         accessKey: row.access_key,
         issuerCnpj: new Cnpj(row.issuer_cnpj),
         issuerName: row.issuer_name,

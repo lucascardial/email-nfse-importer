@@ -15,6 +15,7 @@ import { CreateRouteCommandHandler } from "./route/commands/create-route/create-
 import { AddCityCommandHandler } from "./route/commands/add-city/add-city.command-handler";
 import { RemoveCityCommandHandler } from "./route/commands/remove-city/remove-city.command-handler";
 import { DeleteRouteCommandHandler } from "./route/commands/delete-route/delete-route.command-handler";
+import { RouteReport } from "./invoice/jobs/routes/report";
   
 declare module "inversify" {
     interface Container {
@@ -39,6 +40,7 @@ Container.prototype.addApplication = function() {
     this.bind(AddCityCommandHandler).toSelf()
     this.bind(RemoveCityCommandHandler).toSelf()
     this.bind(DeleteRouteCommandHandler).toSelf()
+    this.bind(RouteReport).toSelf()
 
 
     return this;

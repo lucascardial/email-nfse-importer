@@ -78,6 +78,7 @@ export class GetInvoiceByDateQueryHandler {
 
       const xmlReport = reports.find((report) => report.fileType === "xml");
       const csvReport = reports.find((report) => report.fileType === "csv");
+      const routeReport = reports.find((report) => report.fileType === "xlsx");
 
       const data = {
         meta: {
@@ -87,6 +88,7 @@ export class GetInvoiceByDateQueryHandler {
           limit,
           xmlReport: xmlReport ? xmlReport.uid : null,
           csvReport: csvReport ? csvReport.uid : null,
+          routeReport: routeReport ? routeReport.uid : null,
         },
         data: rows.map((row: any) => ({
           cnpj: row.cnpj,

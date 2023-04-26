@@ -1,6 +1,7 @@
 import { Cnpj } from "../../../../domain/object-values/cnpj";
 
 export type DaillyInvoicesQueryResult = {
+	rota: string,
     accessKey: string;
     issuerCnpj: Cnpj,
 	issuerName: string,
@@ -19,6 +20,3 @@ export type DaillyInvoicesQueryResult = {
 	totalValue: number,
 	issueDate: Date, 
 }
-
-
-	
