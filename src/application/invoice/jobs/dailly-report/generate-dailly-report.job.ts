@@ -303,7 +303,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
   private async getData(date: Date): Promise<DaillyInvoicesQueryResult[]> {
     const { rows } = await this.dbConnection.query(`
       SELECT 
-        routes.name as rota,
+        COALESCE(routes.name, '* Sem rota definida') as rota,
         invoices.access_key,
         issuer.cnpj AS issuer_cnpj,
         issuer.business_name AS issuer_name,
@@ -324,11 +324,11 @@ export class GenerateDaillyReportJob implements JobExecutor {
       FROM invoices
       INNER JOIN companies issuer ON issuer.cnpj = invoices.issuer_cnpj 
       INNER JOIN companies receiver ON receiver.cnpj = invoices.recipient_cnpj
-      INNER JOIN route_cities rc ON rc.city_code = receiver.city_code
-      INNER JOIN routes ON routes.id = rc.route_id
-      WHERE invoices.created_at between $1 AND $2
-      ORDER BY routes.name, receiver.city , receiver.neighborhood
-        `, [
+      LEFT  JOIN route_cities rc ON rc.city_code = receiver.city_code
+      LEFT JOIN routes ON routes.id = rc.route_id
+      WHERE invoices.created_at between '2023-04-25 00:00:00' AND '2023-04-25 23:59:59'
+      ORDER BY COALESCE(routes.name) ASC NULLS FIRST, receiver.city , receiver.neighborhood
+      `, [
           moment.utc(date).startOf("day").toISOString(),
           moment.utc(date).endOf("day").toISOString(),
         ]);
