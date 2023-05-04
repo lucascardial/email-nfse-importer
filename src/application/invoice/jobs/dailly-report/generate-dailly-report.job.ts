@@ -1,7 +1,7 @@
-import xmlBuilder from "xmlbuilder";
+import archiver from "archiver";
 import moment from "moment";
 import { createObjectCsvWriter } from "csv-writer";
-import { writeFileSync } from "fs";
+import { createWriteStream, existsSync } from "fs";
 import { inject, injectable } from "inversify";
 import { DaillyInvoicesQueryResult } from "./types";
 import { Cnpj } from "../../../../domain/object-values/cnpj";
@@ -32,7 +32,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
     await this.buildSheet(invoices, yersterday);
     await this.routesSheet(invoices, yersterday);
 
-    await this.sendDaillyReportToEmail.execute(yersterday);
+    // await this.sendDaillyReportToEmail.execute(yersterday);
   }
 
   private async buildSheet(
@@ -105,86 +105,48 @@ export class GenerateDaillyReportJob implements JobExecutor {
   private async buildXml(
     invoices: DaillyInvoicesQueryResult[],
     date: Date
-  ) {
-    const humanDate = moment.utc(date).format("YYYY-MM-DD");
+  ) : Promise<void> {
 
-    const fileType = "xml";
-    const fullPath = `reports/${humanDate}.${fileType}`;
-    const xml = xmlBuilder.create("NFSes", { encoding: "utf-8" });
+    return new Promise((resolve, reject) => {
+      const humanDate = moment.utc(date).format("YYYY-MM-DD");
 
-    xml.ele("DataReferencia").txt(humanDate).up();
-    const xmlInvoices = xml.ele("Documentos");
-
-    invoices.forEach((invoice) => {
-      xmlInvoices
-        .ele("NFSe")
-        .ele("chNFe")
-        .text(invoice.accessKey)
-        .up()
-        .ele("Emit")
-        .ele("Cnpj")
-        .txt(invoice.issuerCnpj.toString())
-        .up()
-        .ele("xNome")
-        .txt("Empresa Emitente")
-        .up()
-        .up()
-        .ele("Dest")
-        .ele("Cnpj")
-        .txt(invoice.receiverCnpj.toString())
-        .up()
-        .ele("xNome")
-        .txt(invoice.receiverName)
-        .up()
-        .ele("enderDest")
-        .ele("xLgr")
-        .txt(invoice.street)
-        .up()
-        .ele("nro")
-        .txt(invoice.streetNumber)
-        .up()
-        .ele("xBairro")
-        .txt(invoice.neighborhood)
-        .up()
-        .ele("cMun")
-        .txt(invoice.cityCode)
-        .up()
-        .ele("xMun")
-        .txt(invoice.city)
-        .up()
-        .ele("UF")
-        .txt(invoice.state)
-        .up()
-        .ele("CEP")
-        .txt(invoice.zipCode)
-        .up()
-        .up()
-        .ele("fone")
-        .txt(invoice.phone)
-        .up()
-        .up()
-        .ele("totais")
-        .ele("vNF")
-        .txt(invoice.totalValue.toString())
-        .up()
-        .ele("pesoB")
-        .txt(invoice.grossWeight.toString())
-        .up()
-        .ele("qVol")
-        .txt(invoice.quantity.toString())
-        .up();
+      const sourcePath = `downloads/${humanDate}`;
+  
+      const fileType = "zip";
+      const fullPath = `reports/${humanDate}.${fileType}`
+    
+      if(!existsSync(sourcePath)) {
+        console.error(`Directory ${sourcePath} does not exist`);
+        return;
+      }
+  
+      const output = createWriteStream(fullPath);
+      const archive = archiver("zip");
+  
+      archive.on("error", (err) => {
+        throw err;
+      });
+  
+  
+      archive.directory(sourcePath, false);
+  
+      archive.pipe(output);
+      archive.finalize();
+  
+      archive.on("finish", async () => {
+        console.log("Archive wrote %d bytes", archive.pointer());
+  
+        const reportFile = new ReportFile({
+          fileName: `${humanDate}.${fileType}`,
+          filePath: fullPath,
+          fileType,
+          createdAt: date,
+        });
+  
+        await this.reportFileRepository.save(reportFile);
+        resolve();
+      });
     });
-
-    writeFileSync(fullPath, xml.end({ pretty: true }));
-
-    const reportFile = new ReportFile({
-      fileName: `${humanDate}.${fileType}`,
-      filePath: fullPath,
-      fileType,
-      createdAt: date,
-    });
-
-    await this.reportFileRepository.save(reportFile);
   }
 
   public async routesSheet(invoices: DaillyInvoicesQueryResult[],
