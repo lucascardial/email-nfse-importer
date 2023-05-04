@@ -28,11 +28,11 @@ export class GenerateDaillyReportJob implements JobExecutor {
     yersterday.setDate(yersterday.getDate() - 1);
 
     const invoices = await this.getData(yersterday);
-    await this.buildXml(invoices, yersterday);
     await this.buildSheet(invoices, yersterday);
+    await this.buildXml(invoices, yersterday);
     await this.routesSheet(invoices, yersterday);
 
-    // await this.sendDaillyReportToEmail.execute(yersterday);
+    await this.sendDaillyReportToEmail.execute(yersterday);
   }
 
   private async buildSheet(
@@ -117,6 +117,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
     
       if(!existsSync(sourcePath)) {
         console.error(`Directory ${sourcePath} does not exist`);
+        resolve();
         return;
       }
   
@@ -124,7 +125,7 @@ export class GenerateDaillyReportJob implements JobExecutor {
       const archive = archiver("zip");
   
       archive.on("error", (err) => {
-        throw err;
+        console.error(err);
       });
   
   
